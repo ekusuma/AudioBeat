@@ -7,26 +7,16 @@ from sprites import Beat, MousePointer
 from audio import Song
 from collections import deque
 
-#OOP Pygame framework from taken from:
+#OOP Pygame framework adapted from:
 #http://blog.lukasperaza.com/getting-started-with-pygame/
 
 class PygameGame(object):
     def __init__(self, times, song, width=1500, height=850,fps=60, 
                     title="My Game"):
-        self.width = width
-        self.height = height
+        (self.width, self.height) = (width, height)
         self.fps = fps
         self.title = title
-        self.beats = pygame.sprite.Group()
-        self.beatQueue = deque()
-        self.prevX = None
-        self.prevY = None
-        self.maxDist = 200
-        self.minDist = 100
-        self.beatApproach = 60
-        self.beatWindow = 20
-        self.beatNum = 1
-        self.beatNumMax = 8
+        self.initBeats()
 
         self.songPath = os.path.normpath(song)
         self.times = times
@@ -44,6 +34,22 @@ class PygameGame(object):
         self.timeElapsed = 0 + self.audioDelay
         pygame.init()
         pygame.font.init()
+
+    def initBeats(self):
+        self.beats = pygame.sprite.Group()
+        self.beatQueue = deque()
+        #Choices of color for beats: Red, Blue, Green, Orange
+        self.colorChoices = [(255,0,0),(0,0,255),(24,226,24),(247,162,15)]
+        self.beatColor = (0, 0, 0)
+        self.shuffleColor()
+        self.prevX = None
+        self.prevY = None
+        self.maxDist = 200
+        self.minDist = 100
+        self.beatApproach = 60
+        self.beatWindow = 20
+        self.beatNum = 1
+        self.beatNumMax = 4
 
     def run(self):
         clock = pygame.time.Clock()
@@ -96,6 +102,7 @@ class PygameGame(object):
             if beat.clock >= self.beatApproach:
                 beat.kill()
                 self.beatQueue.remove(beat)
+                self.mistake()
 
     def addBeat(self):
         radius = 50
@@ -122,11 +129,13 @@ class PygameGame(object):
             x = self.prevX + dx
             y = self.prevY + dy
         (self.prevX, self.prevY) = (x, y)
-        beat = Beat(x, y, self.width, self.height, self.beatNum)
+        beat = Beat(x, y, self.beatColor, self.beatNum)
         beat.add(self.beats)
         self.beatQueue.append(beat)
+        self.beatNum += 1
         if self.beatNum > self.beatNumMax:
             self.beatNum = 1
+            self.shuffleColor()
 
     def play(self):
         pygame.mixer.music.load(self.songPath)
@@ -139,6 +148,15 @@ class PygameGame(object):
         if rating == "Good": self.score += scoreGood
         elif rating == "Great": self.score += scoreGreat
         elif rating == "Perfect": self.score += scorePerfect
+
+    def mistake(self):
+        pass
+
+    def shuffleColor(self):
+        newColor = random.choice(self.colorChoices)
+        while (newColor == self.beatColor):
+            newColor = random.choice(self.colorChoices)
+        self.beatColor = newColor
 
 track = Song("Songs/Bad Apple.mp3")
 # track = Song("Songs/Bonetrousle.ogg")

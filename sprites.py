@@ -6,7 +6,7 @@ import random
 class Beat(pygame.sprite.Sprite):
     #RGB numbers for white
     WHITE = (255, 255, 255)
-    def __init__(self, x, y, width, height, ordinal):
+    def __init__(self, x, y, color, ordinal):
         super(Beat, self).__init__()
         self.clock = 0
         self.radius = 50
@@ -22,10 +22,7 @@ class Beat(pygame.sprite.Sprite):
                                     pygame.SRCALPHA)
         self.image = self.image.convert_alpha()
         self.ord = ordinal
-        r = random.randint(0, 255)
-        g = random.randint(0, 255)
-        b = random.randint(0, 255)
-        self.color = (r, g, b)
+        self.color = color
         self.draw()
 
     def update(self):
