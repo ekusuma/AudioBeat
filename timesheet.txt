@@ -1,0 +1,31 @@
+Term Project Timesheet
+Edric Kusuma (ekusuma), Section M
+
+Total Hours Worked: 18.5 hours
+
+Week of April 4:
+Total Hours: 12 hours
+Thursday, April 7:
+	2.5 hours: Misc librosa module work (orientation, reading up on documentation and testing).
+Friday, April 8:
+	3 hours: Wrapped up with librosa, now able to use it to analyze audio files.
+	1 hour: Small work with pygame, getting accustomed to it.
+Saturday, April 9:
+	2.5 hours: More work with pygame, incorporating OOP based on Lukas' structure.
+Sunday, April 10:
+	3 hours: Pygame again, getting sprites to work in preparation for TP1 deadline.
+
+Week of April 11:
+Total Hours: 6.5 hours
+Monday, April 11:
+	2.5 hours: Pygame, sprites now working + animations.
+	2 hours: Pygame, got song to play from file, beats are a bit off, however.
+	2 hours: Wrote competitive analysis, proposal, and storyboard.
+Wednesday, April 13:
+	2 hours: Worked on getting click detection to work. Still bugged.
+
+Week of April 18:
+Total Hours:
+
+Week of April 25 (last week!):
+Total Hours:
