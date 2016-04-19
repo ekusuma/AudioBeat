@@ -13,7 +13,7 @@ class Beat(pygame.sprite.Sprite):
         self.rOuter = self.radius * 5
         self.rRing = self.rOuter
         self.dRadius = self.rOuter // 60
-        self.outline = 5
+        self.outline = 4
         self.x = x
         self.y = y
         self.rect = pygame.Rect(self.x - self.rOuter, self.y - self.rOuter,
@@ -22,6 +22,7 @@ class Beat(pygame.sprite.Sprite):
                                     pygame.SRCALPHA)
         self.image = self.image.convert_alpha()
         self.ord = ordinal
+        self.fontSize = 50
         self.color = color
         self.draw()
 
@@ -43,6 +44,15 @@ class Beat(pygame.sprite.Sprite):
                         self.radius-self.outline, self.color)
         pygame.gfxdraw.filled_circle(self.image, self.rOuter, self.rOuter,
                         self.radius-self.outline, self.color)
+        self.drawText()
+
+    def drawText(self):
+        font = pygame.font.Font(None, self.fontSize)
+        text = font.render(str(self.ord), 1, Beat.WHITE)
+        pos = text.get_rect()
+        pos.centerx = self.image.get_rect().centerx
+        pos.centery = self.image.get_rect().centery
+        self.image.blit(text, pos)
 
 #Used for collision detection.
 class MousePointer(pygame.sprite.Sprite):
