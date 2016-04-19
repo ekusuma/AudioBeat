@@ -35,15 +35,20 @@ class Beat(pygame.sprite.Sprite):
 
     def draw(self):
         pygame.draw.circle(self.image, Beat.WHITE, (self.rOuter, self.rOuter),
-                        self.rRing, 3)
-        pygame.gfxdraw.aacircle(self.image, self.rOuter, self.rOuter, 
-                        self.radius, Beat.WHITE)
-        pygame.gfxdraw.filled_circle(self.image, self.rOuter, self.rOuter,
-                        self.radius, Beat.WHITE)
-        pygame.gfxdraw.aacircle(self.image, self.rOuter, self.rOuter, 
-                        self.radius-self.outline, self.color)
-        pygame.gfxdraw.filled_circle(self.image, self.rOuter, self.rOuter,
-                        self.radius-self.outline, self.color)
+            self.rRing, 3)
+        radius = 2 * self.radius
+        outline = 2 * self.outline
+        surface = pygame.Surface((2 * radius, 2 * radius),
+                                    pygame.SRCALPHA)
+        surface = surface.convert_alpha()
+        pygame.draw.circle(surface, Beat.WHITE, (radius, radius),
+                        radius)
+        pygame.draw.circle(surface, self.color, (radius, radius),
+                        radius-outline)
+        (width, height) = (2 * self.radius, 2 * self.radius)
+        surface = pygame.transform.smoothscale(surface, (width, height))
+        startPoint = self.rOuter - self.radius
+        self.image.blit(surface, (startPoint,startPoint))
         self.drawText()
 
     def drawText(self):
