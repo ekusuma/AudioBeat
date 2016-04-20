@@ -15,6 +15,7 @@ class PygameGame(object):
         (self.width, self.height) = (width, height)
         self.fps = fps
         self.title = title
+        self.inGame = True
         self.initBeats()
 
         self.songPath = os.path.normpath(song)
@@ -92,40 +93,15 @@ class PygameGame(object):
         # self.play()
         pygame.mixer.music.load(self.songPath)
 
-        inGame = True
         self.playSong = True
 
-        while inGame:
+        while self.inGame:
             if self.playSong:
                 pygame.mixer.music.set_endevent(self.PLAYBACK_END)
                 pygame.mixer.music.play()
 
             while self.playSong:
-                #tick_busy_loop is more expensive (more accurate too) than just
-                #clock.tick, but this is necessary in a rhythm game.
-                tick = clock.tick_busy_loop(self.fps) / 1000 #Convert to seconds
-                self.timeElapsed += tick
-                self.gameTimerFired(self.timeElapsed, tick)
-
-                for event in pygame.event.get():
-                    if event.type == pygame.QUIT:
-                        inGame = False
-                    elif ((event.type == pygame.MOUSEBUTTONDOWN) and 
-                                                        (event.button == 1)):
-                        self.beatPressed()
-                    elif event.type == pygame.KEYDOWN:
-                        if (event.key == pygame.K_z or event.key == pygame.K_x):
-                            self.beatPressed()
-                    elif event.type == self.PLAYBACK_END:
-                        self.playSong = False
-                        break
-
-                BLACK = (0, 0, 0)
-                self.screen.fill(BLACK)
-                self.hits.draw(self.screen)
-                self.beats.draw(self.screen)
-                self.printText()
-                pygame.display.flip()
+                self.songLoop(clock)
             
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -137,6 +113,38 @@ class PygameGame(object):
         pygame.font.quit()
         pygame.mixer.quit()
         pygame.quit()
+
+    def songLoop(self, clock):
+        #tick_busy_loop is more expensive (more accurate too) than just
+        #clock.tick, but this is necessary in a rhythm game.
+        tick = clock.tick_busy_loop(self.fps) / 1000 #Convert to seconds
+        self.timeElapsed += tick
+        self.gameTimerFired(self.timeElapsed, tick)
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                self.inGame = False
+                self.playSong = False
+                return
+            elif ((event.type == pygame.MOUSEBUTTONDOWN) and 
+                                                (event.button == 1)):
+                self.beatPressed()
+            elif event.type == pygame.KEYDOWN:
+                if (event.key == pygame.K_z or event.key == pygame.K_x):
+                    self.beatPressed()
+            elif event.type == self.PLAYBACK_END:
+                self.playSong = False
+                return
+
+        self.songLoopUpdate()
+
+    def songLoopUpdate(self):
+        BLACK = (0, 0, 0)
+        self.screen.fill(BLACK)
+        self.hits.draw(self.screen)
+        self.beats.draw(self.screen)
+        self.printText()
+        pygame.display.flip()
 
     def beatPressed(self):
         if (len(self.beatQueue) == 0):
