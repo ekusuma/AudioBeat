@@ -28,12 +28,14 @@ class PygameGame(object):
         self.hits = pygame.sprite.Group()
         self.hitKill = 0.5
 
-        self.playSong = True
+        self.playSong = False
+        self.PLAYBACK_END = pygame.USEREVENT + 1
         #Global delay of 300ms seems the best, as there is a noticeable delay
         #in pygame audio otherwise. 250ms may work as well.
         #Need to start time a second early because we add a beat a second early.
         self.audioDelay = -1.30
         self.timeElapsed = 0 + self.audioDelay
+
         pygame.mixer.pre_init(buffer=1024)
         pygame.mixer.init()
         self.initSounds()
@@ -90,39 +92,55 @@ class PygameGame(object):
         # self.play()
         pygame.mixer.music.load(self.songPath)
 
-        if self.playSong:
-            inGame = True
+        inGame = True
+        self.playSong = True
 
         while inGame:
-            #tick_busy_loop is more expensive (more accurate too) than just
-            #clock.tick, but this is necessary in a rhythm game.
-            tick = clock.tick_busy_loop(self.fps) / 1000  #Convert to seconds
             if self.playSong:
-                if not pygame.mixer.music.get_busy():
-                    pygame.mixer.music.play()
-                self.timeElapsed += tick
-            self.timerFired(self.timeElapsed, tick)
+                pygame.mixer.music.set_endevent(self.PLAYBACK_END)
+                pygame.mixer.music.play()
 
+            while self.playSong:
+                #tick_busy_loop is more expensive (more accurate too) than just
+                #clock.tick, but this is necessary in a rhythm game.
+                tick = clock.tick_busy_loop(self.fps) / 1000 #Convert to seconds
+                self.timeElapsed += tick
+                self.gameTimerFired(self.timeElapsed, tick)
+
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        inGame = False
+                    elif ((event.type == pygame.MOUSEBUTTONDOWN) and 
+                                                        (event.button == 1)):
+                        self.beatPressed()
+                    elif event.type == pygame.KEYDOWN:
+                        if (event.key == pygame.K_z or event.key == pygame.K_x):
+                            self.beatPressed()
+                    elif event.type == self.PLAYBACK_END:
+                        self.playSong = False
+                        break
+
+                BLACK = (0, 0, 0)
+                self.screen.fill(BLACK)
+                self.hits.draw(self.screen)
+                self.beats.draw(self.screen)
+                self.printText()
+                pygame.display.flip()
+            
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     inGame = False
-                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                    self.beatPressed()
-                if event.type == pygame.KEYDOWN:
-                    if (event.key == pygame.K_z or event.key == pygame.K_x):
-                        self.beatPressed()
             BLACK = (0, 0, 0)
             self.screen.fill(BLACK)
-            self.hits.draw(self.screen)
-            self.beats.draw(self.screen)
-            self.printText()
             pygame.display.flip()
-        
+
         pygame.font.quit()
         pygame.mixer.quit()
         pygame.quit()
 
     def beatPressed(self):
+        if (len(self.beatQueue) == 0):
+            return
         (x, y) = pygame.mouse.get_pos()
         click = MousePointer(x, y)
         beat = self.beatQueue[0]
@@ -166,14 +184,12 @@ class PygameGame(object):
     def getComboMult(self):
         return (1 + self.combo/25)
 
-    def timerFired(self, time, tick):
-        if self.playSong:
-            if (time + self.beatApproach) >= self.nextBeat:
+    def gameTimerFired(self, time, tick):
+        if (time + self.beatApproach) >= self.nextBeat:
+            if len(self.times) > 0:
                 self.addBeat()
-                if len(self.times) > 0:
-                    self.nextBeat = self.times.pop(0)
-                else:
-                    self.playSong = False
+                self.nextBeat = self.times.pop(0)
+
         for beat in self.beats:
             beat.update(tick)
             if beat.clock >= self.beatKill:
@@ -264,8 +280,9 @@ class PygameGame(object):
         hitText = Text(self.screen, text, size, x, y, "center", color)
         hitText.add(self.hits)
 
-# track = Song("Songs/Bad Apple.mp3")
-track = Song("Songs/Bonetrousle.ogg")
+track = Song("Songs/Bad Apple.mp3")
+# track = Song("Songs/Intermission.ogg")
+# track = Song("Songs/Bonetrousle.ogg")
 # track = Song("Songs/Dogsong.ogg")
 # track = Song("Songs/Dummy!.ogg")
 # track = Song("Songs/MEGALOVANIA.ogg")
