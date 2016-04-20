@@ -1,8 +1,6 @@
 Term Project Timesheet
 Edric Kusuma (ekusuma), Section M
 
-Total Hours Worked: 18.5 hours
-
 Week of April 4:
 Total Hours: 12 hours
 Thursday, April 7:
@@ -16,16 +14,28 @@ Sunday, April 10:
 	3 hours: Pygame again, getting sprites to work in preparation for TP1 deadline.
 
 Week of April 11:
-Total Hours: 6.5 hours
+Total Hours: 12.5 hours
 Monday, April 11:
 	2.5 hours: Pygame, sprites now working + animations.
 	2 hours: Pygame, got song to play from file, beats are a bit off, however.
 	2 hours: Wrote competitive analysis, proposal, and storyboard.
 Wednesday, April 13:
 	2 hours: Worked on getting click detection to work. Still bugged.
+Saturday, April 16:
+	4 hours: Click detection works. Timing issues are present.
 
 Week of April 18:
-Total Hours:
+Total Hours: 9 hours
+Monday, April 18:
+	2 hours: Worked with colors to make game more aesthetically pleasing.
+Tuesday, April 19:
+	3 hours: Managed to get pseudo-antialiasing with pygame to work. Fixed bug with timing.
+	Note: Project added to GitHub repository: https://github.com/edgykuma/15-112-Term-Project
+	4 hours: Timing issues fixed. Aesthetic design finalized. Game now works, ready for TP2.
 
 Week of April 25 (last week!):
 Total Hours:
+
+
+
+Total Hours Worked: 33.5 hours

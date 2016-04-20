@@ -15,7 +15,7 @@ class PygameGame(object):
         (self.width, self.height) = (width, height)
         self.fps = fps
         self.title = title
-        self.inGame = True
+        # self.inGame = True
         self.initBeats()
 
         self.songPath = os.path.normpath(song)
@@ -29,6 +29,7 @@ class PygameGame(object):
         self.hits = pygame.sprite.Group()
         self.hitKill = 0.5
 
+        self.inGame = True
         self.playSong = False
         self.PLAYBACK_END = pygame.USEREVENT + 1
         #Global delay of 300ms seems the best, as there is a noticeable delay
@@ -288,11 +289,11 @@ class PygameGame(object):
         hitText = Text(self.screen, text, size, x, y, "center", color)
         hitText.add(self.hits)
 
-track = Song("Songs/Bad Apple.mp3")
+# track = Song("Songs/Bad Apple.mp3")
 # track = Song("Songs/Intermission.ogg")
 # track = Song("Songs/Bonetrousle.ogg")
 # track = Song("Songs/Dogsong.ogg")
-# track = Song("Songs/Dummy!.ogg")
+track = Song("Songs/Dummy!.ogg")
 # track = Song("Songs/MEGALOVANIA.ogg")
 # track = Song("Songs/Spear of Justice.ogg")
 # track = Song("Songs/P3 FES.ogg")
