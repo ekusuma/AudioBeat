@@ -36,6 +36,7 @@ class PygameGame(object):
         pygame.font.init()
 
     def initBeats(self):
+        self.r = 50
         self.beats = pygame.sprite.Group()
         self.beatQueue = deque()
         #Choices of color for beats: Red, Blue, Green, Orange
@@ -46,10 +47,27 @@ class PygameGame(object):
         self.prevY = None
         self.maxDist = 200
         self.minDist = 100
-        self.beatApproach = 60
-        self.beatWindow = 20
         self.beatNum = 1
         self.beatNumMax = 4
+        self.initBeatTiming()
+
+        self.scoreBad = 50
+        self.scoreGood = 100
+        self.scorePerfect = 300
+
+    def initBeatTiming(self):
+        self.beatApproach = 60
+        self.windowWidth = 5
+
+        self.goodLate = self.beatApproach + self.windowWidth
+        self.badLate = self.goodLate + self.windowWidth
+        self.missLate = self.badLate + self.windowWidth
+        self.beatKill = self.missLate + self.windowWidth
+
+        self.perfectEarly = self.beatApproach - self.windowWidth
+        self.goodEarly = self.perfectEarly - self.windowWidth
+        self.badEarly = self.goodEarly - self.windowWidth
+        self.missEarly = self.badEarly - self.windowWidth
 
     def run(self):
         clock = pygame.time.Clock()
@@ -61,7 +79,9 @@ class PygameGame(object):
         self.play()
 
         while inGame:
-            tick = clock.tick(self.fps) / 1000  #Convert to seconds
+            #tick_busy_loop is more expensive (more accurate too) than just
+            #clock.tick, but this is necessary in a rhythm game.
+            tick = clock.tick_busy_loop(self.fps) / 1000  #Convert to seconds
             self.timeElapsed += tick
             self.timerFired(self.timeElapsed)
             for event in pygame.event.get():
@@ -84,8 +104,31 @@ class PygameGame(object):
         (x, y) = pygame.mouse.get_pos()
         click = MousePointer(x, y)
         beat = self.beatQueue[0]
-        if (beat.clock >= (self.beatApproach - self.beatWindow) and 
-            pygame.sprite.collide_circle(beat, click)):
+        if (pygame.sprite.collide_circle(beat, click)):
+            print(beat.clock, end="")
+            if (beat.clock >= self.missLate):
+                self.mistake()
+                print("you fucked up")
+            elif (beat.clock >= self.badLate):
+                self.score += self.scoreBad
+                print("bad")
+            elif (beat.clock >= self.goodLate):
+                self.score += self.scoreGood
+                print("good")
+            elif (beat.clock >= self.perfectEarly):
+                self.score += self.scorePerfect
+                print("perfect")
+            elif (beat.clock >= self.goodEarly):
+                self.score += self.scoreGood
+                print("good")
+            elif (beat.clock >= self.badEarly):
+                self.score += self.scoreBad
+                print("bad")
+            elif (beat.clock >= self.missEarly):
+                self.mistake()
+                print("you fucked up")
+            else:
+                return
             beat.kill()
             self.beatQueue.popleft()
 
@@ -99,39 +142,35 @@ class PygameGame(object):
                     self.playSong = False
         for beat in self.beats:
             beat.update()
-            if beat.clock >= self.beatApproach:
+            if beat.clock >= self.beatKill:
                 beat.kill()
                 self.beatQueue.remove(beat)
                 self.mistake()
 
     def addBeat(self):
-        radius = 50
-        offsetWidth = self.width - radius
-        offsetHeight = self.height - radius
+        (offsetW, offsetH) = (self.width-self.r, self.height-self.r)
         if (self.prevX == None) and (self.prevY == None):
-            x = random.randint(0+radius, self.width-radius)
-            y = random.randint(0+radius, self.height-radius)
+            x = random.randint(0+self.r, offsetW)
+            y = random.randint(0+self.r, offsetH)
         else:
-            if (self.prevX < self.width // 4):
-                xMult = 1
-            elif (self.prevX > 3*(self.width // 4)):
-                xMult = -1
-            else:
-                xMult = random.choice([-1, 1])
-            if (self.prevY < self.height // 4):
-                yMult = 1
-            elif (self.prevY > 3*(self.height // 4)):
-                yMult = -1
-            else:
-                yMult = random.choice([-1, 1])
+            if (self.prevX < self.width // 4): xMult = 1
+            elif (self.prevX > 3*(self.width // 4)): xMult = -1
+            else: xMult = random.choice([-1, 1])
+
+            if (self.prevY < self.height // 4): yMult = 1
+            elif (self.prevY > 3*(self.height // 4)): yMult = -1
+            else: yMult = random.choice([-1, 1])
+
             dx = random.randint(self.minDist, self.maxDist) * xMult
             dy = random.randint(self.minDist, self.maxDist) * yMult
-            x = self.prevX + dx
-            y = self.prevY + dy
+            (x, y) = (self.prevX + dx, self.prevY + dy)
         (self.prevX, self.prevY) = (x, y)
         beat = Beat(x, y, self.beatColor, self.beatNum)
         beat.add(self.beats)
         self.beatQueue.append(beat)
+        self.updateOrdinal()
+
+    def updateOrdinal(self):
         self.beatNum += 1
         if self.beatNum > self.beatNumMax:
             self.beatNum = 1
@@ -140,14 +179,6 @@ class PygameGame(object):
     def play(self):
         pygame.mixer.music.load(self.songPath)
         pygame.mixer.music.play()
-
-    def addScore(self, rating):
-        scoreGood = 100
-        scoreGreat = 200
-        scorePerfect = 300
-        if rating == "Good": self.score += scoreGood
-        elif rating == "Great": self.score += scoreGreat
-        elif rating == "Perfect": self.score += scorePerfect
 
     def mistake(self):
         pass

@@ -12,6 +12,7 @@ class Beat(pygame.sprite.Sprite):
         self.radius = 50
         self.rOuter = self.radius * 5
         self.rRing = self.rOuter
+        self.ringWidth = 3
         self.dRadius = self.rOuter // 60
         self.outline = 4
         self.x = x
@@ -28,14 +29,15 @@ class Beat(pygame.sprite.Sprite):
 
     def update(self):
         self.clock += 1
-        self.rRing -= self.dRadius
+        if (self.rRing > self.radius):
+            self.rRing -= self.dRadius
         #Fills in white, with the fourth number being the alpha (transparent).
         self.image.fill((255,255,255,0))
         self.draw()
 
     def draw(self):
         pygame.draw.circle(self.image, Beat.WHITE, (self.rOuter, self.rOuter),
-            self.rRing, 3)
+            self.rRing, self.ringWidth)
         radius = 2 * self.radius
         outline = 2 * self.outline
         surface = pygame.Surface((2 * radius, 2 * radius),
