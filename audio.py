@@ -1,4 +1,5 @@
 import librosa
+import pygame
 import os
 
 class Song(object):
@@ -32,3 +33,8 @@ class Song(object):
 
     def getPath(self):
         return self.path
+
+class Sound(pygame.mixer.Sound):
+    def __init__(self, path):
+        self.path = os.path.normpath(path)
+        super(Sound, self).__init__(file=self.path)

@@ -1,10 +1,9 @@
 import pygame
 import os
-import time
 import random
 
-from sprites import Beat, MousePointer
-from audio import Song
+from sprites import Beat, MousePointer, Text
+from audio import Song, Sound
 from collections import deque
 
 #OOP Pygame framework adapted from:
@@ -24,14 +23,20 @@ class PygameGame(object):
 
         self.combo = 0
         self.score = 0
+        self.prevAddition = 0
+        self.lastBeatHit = (0, 0)
+        self.hits = pygame.sprite.Group()
+        self.hitKill = 0.5
 
         self.playSong = True
         #Global delay of 300ms seems the best, as there is a noticeable delay
         #in pygame audio otherwise. 250ms may work as well.
-        #Aside: allow user to customize delay?
         #Need to start time a second early because we add a beat a second early.
         self.audioDelay = -1.30
         self.timeElapsed = 0 + self.audioDelay
+        pygame.mixer.pre_init(buffer=1024)
+        pygame.mixer.init()
+        self.initSounds()
         pygame.init()
         pygame.font.init()
 
@@ -56,8 +61,8 @@ class PygameGame(object):
         self.scorePerfect = 300
 
     def initBeatTiming(self):
-        self.beatApproach = 60
-        self.windowWidth = 5
+        self.beatApproach = 1.0
+        self.windowWidth = 0.06
 
         self.goodLate = self.beatApproach + self.windowWidth
         self.badLate = self.goodLate + self.windowWidth
@@ -69,83 +74,116 @@ class PygameGame(object):
         self.badEarly = self.goodEarly - self.windowWidth
         self.missEarly = self.badEarly - self.windowWidth
 
+    def initSounds(self):
+        #hit sound from:
+        #https://www.freesound.org/people/radiopassiveboy/sounds/219266/
+        self.soundHit = Sound("SFX/hit.ogg")
+        #mistake sound from:
+        #https://www.freesound.org/people/zerolagtime/sounds/49238/
+        self.soundMiss = Sound("SFX/miss.ogg")
+
     def run(self):
         clock = pygame.time.Clock()
-        screen = pygame.display.set_mode((self.width, self.height))
+        self.screen = pygame.display.set_mode((self.width, self.height))
         pygame.display.set_caption(self.title)
 
-        inGame = True
+        # self.play()
+        pygame.mixer.music.load(self.songPath)
 
-        self.play()
+        if self.playSong:
+            inGame = True
 
         while inGame:
             #tick_busy_loop is more expensive (more accurate too) than just
             #clock.tick, but this is necessary in a rhythm game.
             tick = clock.tick_busy_loop(self.fps) / 1000  #Convert to seconds
-            self.timeElapsed += tick
-            self.timerFired(self.timeElapsed)
+            if self.playSong:
+                if not pygame.mixer.music.get_busy():
+                    pygame.mixer.music.play()
+                self.timeElapsed += tick
+            self.timerFired(self.timeElapsed, tick)
+
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     inGame = False
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                    self.mousePressed()
+                    self.beatPressed()
                 if event.type == pygame.KEYDOWN:
                     if (event.key == pygame.K_z or event.key == pygame.K_x):
-                        self.mousePressed()
+                        self.beatPressed()
             BLACK = (0, 0, 0)
-            screen.fill(BLACK)
-            self.beats.draw(screen)
+            self.screen.fill(BLACK)
+            self.hits.draw(self.screen)
+            self.beats.draw(self.screen)
+            self.printText()
             pygame.display.flip()
         
         pygame.font.quit()
+        pygame.mixer.quit()
         pygame.quit()
 
-    def mousePressed(self):
+    def beatPressed(self):
         (x, y) = pygame.mouse.get_pos()
         click = MousePointer(x, y)
         beat = self.beatQueue[0]
         if (pygame.sprite.collide_circle(beat, click)):
-            print(beat.clock, end="")
-            if (beat.clock >= self.missLate):
-                self.mistake()
-                print("you fucked up")
-            elif (beat.clock >= self.badLate):
-                self.score += self.scoreBad
-                print("bad")
-            elif (beat.clock >= self.goodLate):
-                self.score += self.scoreGood
-                print("good")
-            elif (beat.clock >= self.perfectEarly):
-                self.score += self.scorePerfect
-                print("perfect")
-            elif (beat.clock >= self.goodEarly):
-                self.score += self.scoreGood
-                print("good")
-            elif (beat.clock >= self.badEarly):
-                self.score += self.scoreBad
-                print("bad")
-            elif (beat.clock >= self.missEarly):
-                self.mistake()
-                print("you fucked up")
-            else:
+            mistake = self.addScore(beat.clock, beat)
+            if (mistake == None):
                 return
+            elif mistake:
+                self.mistake(beat)
+            else:
+                self.soundHit.play()
+                self.combo += 1
             beat.kill()
             self.beatQueue.popleft()
+            self.addHit(beat)
 
-    def timerFired(self, time):
+    #Returns True if a mistake is made, None if player clicks early, and 
+    #increments score otherwise.
+    def addScore(self, time, beat):
+        mult = self.getComboMult()
+        if (time >= self.missLate):
+            return True
+        elif (time >= self.badLate):
+            addition = self.scoreBad
+        elif (time >= self.goodLate):
+            addition = self.scoreGood
+        elif (time >= self.perfectEarly):
+            addition = self.scorePerfect
+        elif (time >= self.goodEarly):
+            addition = self.scoreGood
+        elif (time >= self.badEarly):
+            addition = self.scoreBad
+        elif (time >= self.missEarly):
+            return True
+        else:
+            return None
+        self.score = int(self.score + (addition * mult))
+        self.prevAddition = addition
+        return False
+
+    def getComboMult(self):
+        return (1 + self.combo/25)
+
+    def timerFired(self, time, tick):
         if self.playSong:
-            if (time + 1) >= self.nextBeat:
+            if (time + self.beatApproach) >= self.nextBeat:
                 self.addBeat()
                 if len(self.times) > 0:
                     self.nextBeat = self.times.pop(0)
                 else:
                     self.playSong = False
         for beat in self.beats:
-            beat.update()
+            beat.update(tick)
             if beat.clock >= self.beatKill:
                 beat.kill()
                 self.beatQueue.remove(beat)
-                self.mistake()
+                self.mistake(beat)
+        for hit in self.hits:
+            hit.update(tick)
+            if hit.clock >= self.hitKill:
+                hit.kill()
 
     def addBeat(self):
         (offsetW, offsetH) = (self.width-self.r, self.height-self.r)
@@ -180,8 +218,16 @@ class PygameGame(object):
         pygame.mixer.music.load(self.songPath)
         pygame.mixer.music.play()
 
-    def mistake(self):
-        pass
+    def mistake(self, beat):
+        if (self.combo >= 10):
+            self.soundMiss.play()
+        self.combo = 0
+        xColor = (255, 0, 0)
+        (x, y) = beat.getPos()
+        text = "x"
+        size = 100
+        missText = Text(self.screen, text, size, x, y, "center", xColor)
+        missText.add(self.hits)
 
     def shuffleColor(self):
         newColor = random.choice(self.colorChoices)
@@ -189,8 +235,37 @@ class PygameGame(object):
             newColor = random.choice(self.colorChoices)
         self.beatColor = newColor
 
-track = Song("Songs/Bad Apple.mp3")
-# track = Song("Songs/Bonetrousle.ogg")
+    def printText(self):
+        (width, height) = self.screen.get_size()
+        textScore = str(self.score)
+        (xScore, yScore) = (width-10, 0)
+        scoreSize = 60
+        scoreText = Text(self.screen, textScore, scoreSize, xScore, yScore, "ne")
+        
+        textCombo = str(self.combo) + "x"
+        (xCombo, yCombo) = (10, height)
+        comboSize = 75
+        comboText = Text(self.screen, textCombo, comboSize, xCombo, yCombo, "sw")
+
+    def addHit(self, beat):
+        colorPerfect = (125, 200, 255)
+        colorGood = (88, 255, 88)
+        colorBad = (255, 226, 125)
+
+        (x, y) = beat.getPos()
+        text = str(self.prevAddition)
+        if (self.prevAddition == self.scorePerfect):
+            color = colorPerfect
+        elif (self.prevAddition == self.scoreGood):
+            color = colorGood
+        elif (self.prevAddition == self.scoreBad):
+            color = colorBad
+        size = 50
+        hitText = Text(self.screen, text, size, x, y, "center", color)
+        hitText.add(self.hits)
+
+# track = Song("Songs/Bad Apple.mp3")
+track = Song("Songs/Bonetrousle.ogg")
 # track = Song("Songs/Dogsong.ogg")
 # track = Song("Songs/Dummy!.ogg")
 # track = Song("Songs/MEGALOVANIA.ogg")
@@ -201,6 +276,6 @@ track = Song("Songs/Bad Apple.mp3")
 times = track.getBeatTimes()
 path = track.getPath()
 
-game = PygameGame(times, path)
+game = PygameGame(times, path, title="AudioBeat")
 
 game.run()
