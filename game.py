@@ -35,7 +35,7 @@ class PygameGame(object):
         #Global delay of 300ms seems the best, as there is a noticeable delay
         #in pygame audio otherwise. 250ms may work as well.
         #Need to start time a second early because we add a beat a second early.
-        self.audioDelay = -1.30
+        self.audioDelay = -1.35
         self.timeElapsed = 0 + self.audioDelay
 
         pygame.mixer.pre_init(buffer=1024)
@@ -106,7 +106,8 @@ class PygameGame(object):
             
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    inGame = False
+                    self.inGame = False
+
             BLACK = (0, 0, 0)
             self.screen.fill(BLACK)
             pygame.display.flip()
@@ -126,7 +127,6 @@ class PygameGame(object):
             if event.type == pygame.QUIT:
                 self.inGame = False
                 self.playSong = False
-                return
             elif ((event.type == pygame.MOUSEBUTTONDOWN) and 
                                                 (event.button == 1)):
                 self.beatPressed()
@@ -135,7 +135,6 @@ class PygameGame(object):
                     self.beatPressed()
             elif event.type == self.PLAYBACK_END:
                 self.playSong = False
-                return
 
         self.songLoopUpdate()
 
@@ -285,15 +284,15 @@ class PygameGame(object):
             color = colorGood
         elif (self.prevAddition == self.scoreBad):
             color = colorBad
+        else: return
         size = 50
         hitText = Text(self.screen, text, size, x, y, "center", color)
         hitText.add(self.hits)
 
 # track = Song("Songs/Bad Apple.mp3")
-# track = Song("Songs/Intermission.ogg")
-# track = Song("Songs/Bonetrousle.ogg")
+track = Song("Songs/Bonetrousle.ogg")
 # track = Song("Songs/Dogsong.ogg")
-track = Song("Songs/Dummy!.ogg")
+# track = Song("Songs/Dummy!.ogg")
 # track = Song("Songs/MEGALOVANIA.ogg")
 # track = Song("Songs/Spear of Justice.ogg")
 # track = Song("Songs/P3 FES.ogg")
