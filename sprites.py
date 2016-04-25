@@ -78,8 +78,9 @@ class MousePointer(pygame.sprite.Sprite):
                                 2 * self.radius, 2 * self.radius)
 
 class Text(pygame.sprite.Sprite):
+    WHITE = (255, 255, 255)
     def __init__(self, surface, text, size, x, y, anchor="nw", 
-                                                color=(255,255,255)):
+                                                color=Text.WHITE):
         super(Text, self).__init__()
         (self.x, self.y) = (x, y)
         self.text = text
@@ -129,6 +130,13 @@ class Text(pygame.sprite.Sprite):
 class Button(pygame.sprite.Sprite):
     def __init__(self, text, x, y, width, height):
         super(Button, self).__init__()
-        self.text = text
         (self.x, self.y) = (x, y)
         (self.width, self.height) = (width, height)
+        self.fontSize = 30
+        self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
+        self.image = pygame.Surface((self.width, self.height))
+        self.text = Text(self.image, text, self.fontSize, self.x, self.y)
+
+    def update(self):
+        self.draw()
+        self.text.update()

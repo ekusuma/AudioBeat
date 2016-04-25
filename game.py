@@ -10,17 +10,25 @@ from collections import deque
 #http://blog.lukasperaza.com/getting-started-with-pygame/
 
 class PygameGame(object):
-    def __init__(self, times, song, width=1500, height=850,fps=60, 
+    def __init__(self, width=1500, height=850,fps=60, 
                     title="My Game"):
         (self.width, self.height) = (width, height)
         self.fps = fps
         self.title = title
-        # self.inGame = True
+        self.inMenu = True
+        self.inGame = True
+        self.playSong = False
+        # self.initMenu()
         self.initBeats()
 
-        self.songPath = os.path.normpath(song)
-        self.times = times
-        self.nextBeat = self.times.pop(0)
+        #######################################################################
+        ##Remove this section, will be moved to self.initSong()
+        #######################################################################
+        # self.songPath = os.path.normpath(song)
+        # self.times = times
+        # self.nextBeat = self.times.pop(0)
+        #######################################################################
+        #######################################################################
 
         self.combo = 0
         self.score = 0
@@ -29,8 +37,6 @@ class PygameGame(object):
         self.hits = pygame.sprite.Group()
         self.hitKill = 0.5
 
-        self.inGame = True
-        self.playSong = False
         self.PLAYBACK_END = pygame.USEREVENT + 1
         #Global delay of 300ms seems the best, as there is a noticeable delay
         #in pygame audio otherwise. 250ms may work as well.
@@ -43,6 +49,13 @@ class PygameGame(object):
         self.initSounds()
         pygame.init()
         pygame.font.init()
+
+    def initMenu(self):
+        #Menu pictures from: https://goo.gl/bwppX2
+        path = "Pictures/menu.png"
+        path = os.path.normpath(path)
+        self.menu = pygame.image.load(path)
+        self.menu.convert()
 
     def initBeats(self):
         self.r = 50
@@ -78,6 +91,13 @@ class PygameGame(object):
         self.badEarly = self.goodEarly - self.windowWidth
         self.missEarly = self.badEarly - self.windowWidth
 
+    def initSong(self, path):
+        self.songPath = os.path.normpath(path)
+        self.song = Song(self.songPath)
+        self.times = self.song.getBeatTimes()
+        self.nextBeat = self.times.pop(0)
+        pygame.mixer.music.load(self.songPath)
+
     def initSounds(self):
         #hit sound from:
         #https://www.freesound.org/people/radiopassiveboy/sounds/219266/
@@ -90,11 +110,7 @@ class PygameGame(object):
         clock = pygame.time.Clock()
         self.screen = pygame.display.set_mode((self.width, self.height))
         pygame.display.set_caption(self.title)
-
-        # self.play()
-        pygame.mixer.music.load(self.songPath)
-
-        self.playSong = True
+        self.initMenu()
 
         while self.inGame:
             if self.playSong:
@@ -103,6 +119,9 @@ class PygameGame(object):
 
             while self.playSong:
                 self.songLoop(clock)
+
+            while self.inMenu:
+                self.menuLoop()
             
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -127,16 +146,32 @@ class PygameGame(object):
             if event.type == pygame.QUIT:
                 self.inGame = False
                 self.playSong = False
-            elif ((event.type == pygame.MOUSEBUTTONDOWN) and 
-                                                (event.button == 1)):
+            elif event.type == pygame.MOUSEBUTTONDOWN:
                 self.beatPressed()
             elif event.type == pygame.KEYDOWN:
                 if (event.key == pygame.K_z or event.key == pygame.K_x):
                     self.beatPressed()
             elif event.type == self.PLAYBACK_END:
+                pygame.mixer.music.stop()
                 self.playSong = False
 
         self.songLoopUpdate()
+
+    def menuLoop(self):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                self.inGame = False
+                self.inMenu = False
+            elif ((event.type == pygame.MOUSEBUTTONDOWN) and 
+                    (event.button == 1)):
+                self.buttonPressed()
+
+        self.screen.blit(self.menu, (0, 0))
+        pygame.display.flip()
+
+    def buttonPressed(self):
+        (x, y) = pygame.mouse.get_pos()
+        click = MousePointer(x, y)
 
     def songLoopUpdate(self):
         BLACK = (0, 0, 0)
@@ -264,12 +299,12 @@ class PygameGame(object):
         textScore = str(self.score)
         (xScore, yScore) = (width-10, 0)
         scoreSize = 60
-        scoreText = Text(self.screen, textScore, scoreSize, xScore, yScore, "ne")
+        scoreText = Text(self.screen, textScore, scoreSize, xScore, yScore,"ne")
         
         textCombo = str(self.combo) + "x"
         (xCombo, yCombo) = (10, height)
         comboSize = 75
-        comboText = Text(self.screen, textCombo, comboSize, xCombo, yCombo, "sw")
+        comboText = Text(self.screen, textCombo, comboSize, xCombo, yCombo,"sw")
 
     def addHit(self, beat):
         colorPerfect = (125, 200, 255)
@@ -289,7 +324,7 @@ class PygameGame(object):
         hitText = Text(self.screen, text, size, x, y, "center", color)
         hitText.add(self.hits)
 
-track = Song("Songs/Bad Apple.mp3")
+# track = Song("Songs/Bad Apple.mp3")
 # track = Song("Songs/Bonetrousle.ogg")
 # track = Song("Songs/Dogsong.ogg")
 # track = Song("Songs/Dummy!.ogg")
@@ -298,9 +333,9 @@ track = Song("Songs/Bad Apple.mp3")
 # track = Song("Songs/P3 FES.ogg")
 # track = Song("Songs/Rainbow Road.ogg")
 
-times = track.getBeatTimes()
-path = track.getPath()
+# times = track.getBeatTimes()
+# path = track.getPath()
 
-game = PygameGame(times, path, title="AudioBeat")
+game = PygameGame(title="AudioBeat")
 
 game.run()
