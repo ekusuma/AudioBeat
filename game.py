@@ -289,8 +289,8 @@ class PygameGame(object):
         hitText = Text(self.screen, text, size, x, y, "center", color)
         hitText.add(self.hits)
 
-# track = Song("Songs/Bad Apple.mp3")
-track = Song("Songs/Bonetrousle.ogg")
+track = Song("Songs/Bad Apple.mp3")
+# track = Song("Songs/Bonetrousle.ogg")
 # track = Song("Songs/Dogsong.ogg")
 # track = Song("Songs/Dummy!.ogg")
 # track = Song("Songs/MEGALOVANIA.ogg")
