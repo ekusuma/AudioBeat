@@ -129,8 +129,6 @@ class Text(pygame.sprite.Sprite):
 
 #Button uses an image for the visuals.
 class Button(pygame.sprite.Sprite):
-    BLUE = (0, 102, 255)
-    WHITE = (0, 0, 0)
     def __init__(self, path, x, y, width, height):
         super(Button, self).__init__()
         (self.x, self.y) = (x, y)

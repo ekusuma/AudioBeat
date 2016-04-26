@@ -15,20 +15,8 @@ class PygameGame(object):
         (self.width, self.height) = (width, height)
         self.fps = fps
         self.title = title
-        self.inMenu = True
-        self.inGame = True
-        self.playSong = False
-        # self.initMenu()
+        self.initModes()
         self.initBeats()
-
-        #######################################################################
-        ##Remove this section, will be moved to self.initSong()
-        #######################################################################
-        # self.songPath = os.path.normpath(song)
-        # self.times = times
-        # self.nextBeat = self.times.pop(0)
-        #######################################################################
-        #######################################################################
 
         self.combo = 0
         self.score = 0
@@ -37,7 +25,9 @@ class PygameGame(object):
         self.hits = pygame.sprite.Group()
         self.hitKill = 0.5
 
+        #Create an event that will trigger when the song finishes.
         self.PLAYBACK_END = pygame.USEREVENT + 1
+        
         #Global delay of 300ms seems the best, as there is a noticeable delay
         #in pygame audio otherwise. 250ms may work as well.
         #Need to start time a second early because we add a beat a second early.
@@ -50,28 +40,43 @@ class PygameGame(object):
         pygame.init()
         pygame.font.init()
 
+    def initModes(self):
+        self.inGame = True
+        self.inMenu = True
+        self.songSelect = False
+        self.instructions = False
+        self.playSong = False
+
     def initMenu(self):
         #Menu pictures from: https://goo.gl/bwppX2
         path = "Pictures/menu.png"
         path = os.path.normpath(path)
         self.menu = pygame.image.load(path)
         self.menu.convert()
-        self.buttons = pygame.sprite.Group()
-        self.initButtons()
+        self.menuButtons = pygame.sprite.Group()
+        self.initMenuButtons()
 
-    def initButtons(self):
-        #All buttons were drawn by Edric Kusuma.
-        (playX, playY) = (850, 150)
+    def initMenuButtons(self):
+        rect = pygame.Rect(50, 275, 700, 300)
+        #All buttons and the logo were drawn by Edric Kusuma.
+        (logoX, logoY) = (50, 275)
+        (logoW, logoH) = (700, 300)
+        logoPath = "Pictures/Logo.png"
+        logo = Button(logoPath, logoX, logoY, logoW, logoH)
+
+        (playX, playY) = (850, 210)
         (playW, playH) = (500, 200)
         playPath = "Pictures/Buttons/Play.png"
         self.playButton = Button(playPath, playX, playY, playW, playH)
-        (howToX, howToY) = (850, 400)
+
+        (howToX, howToY) = (850, 460)
         (howToW, howToH) = (500, 150)
         howToPath = "Pictures/Buttons/HowTo.png"
         self.howToButton = Button(howToPath, howToX, howToY, howToW, howToH)
 
-        self.playButton.add(self.buttons)
-        self.howToButton.add(self.buttons)
+        logo.add(self.menuButtons)
+        self.playButton.add(self.menuButtons)
+        self.howToButton.add(self.menuButtons)
 
     def initBeats(self):
         self.r = 50
@@ -121,23 +126,50 @@ class PygameGame(object):
         #mistake sound from:
         #https://www.freesound.org/people/zerolagtime/sounds/49238/
         self.soundMiss = Sound("SFX/miss.ogg")
+        
+    def initHowTo(self):
+        self.howToItems = pygame.sprite.Group()
+
+        (x, y) = (250, 100)
+        (width, height) = (1200, 700)
+        path = "Pictures/HowTo.png"
+        howToPlay = Button(path, x, y, width, height)
+
+        (x, y) = (250, 50)
+        (width, height) = (600, 50)
+        path = "Pictures/HowToHeader.png"
+        howToHeader = Button(path, x, y, width, height)
+
+        (x, y) = (50, 50)
+        (width, height) = (175, 750)
+        path = "Pictures/Buttons/Back.png"
+        self.toMenu = Button(path, x, y, width, height)
+
+        howToPlay.add(self.howToItems)
+        howToHeader.add(self.howToItems)
+        self.toMenu.add(self.howToItems)
 
     def run(self):
         clock = pygame.time.Clock()
         self.screen = pygame.display.set_mode((self.width, self.height))
         pygame.display.set_caption(self.title)
         self.initMenu()
+        self.initHowTo()
 
         while self.inGame:
+
+            while self.inMenu:
+                self.menuLoop(clock)
+
+            while self.instructions:
+                self.instructionLoop(clock)
+
             if self.playSong:
                 pygame.mixer.music.set_endevent(self.PLAYBACK_END)
                 pygame.mixer.music.play()
 
             while self.playSong:
                 self.songLoop(clock)
-
-            while self.inMenu:
-                self.menuLoop(clock)
             
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -150,6 +182,34 @@ class PygameGame(object):
         pygame.font.quit()
         pygame.mixer.quit()
         pygame.quit()
+
+    def instructionLoop(self, clock):
+        clock.tick(self.fps)
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                self.inGame = False
+                self.instructions = False
+            elif event.type == pygame.KEYDOWN:
+                if (event.key == pygame.K_ESCAPE):
+                    self.soundMiss.play()
+                    self.instructions = False
+                    self.inMenu = True
+            elif ((event.type == pygame.MOUSEBUTTONDOWN) and
+                    (event.button == 1)):
+                self.howToPressed()
+
+        self.screen.blit(self.menu, (0, 0))
+        self.howToItems.draw(self.screen)
+        pygame.display.flip()
+
+    def howToPressed(self):
+        (x, y) = pygame.mouse.get_pos()
+        click = MousePointer(x, y)
+        if pygame.sprite.collide_rect(self.toMenu, click):
+            self.soundMiss.play()
+            self.instructions = False
+            self.inMenu = True
 
     def songLoop(self, clock):
         #tick_busy_loop is more expensive (more accurate too) than just
@@ -185,16 +245,18 @@ class PygameGame(object):
                 self.menuPressed()
 
         self.screen.blit(self.menu, (0, 0))
-        self.buttons.draw(self.screen)
+        self.menuButtons.draw(self.screen)
         pygame.display.flip()
 
     def menuPressed(self):
         (x, y) = pygame.mouse.get_pos()
         click = MousePointer(x, y)
-        if (pygame.sprite.collide_rect(self.playButton, click)):
-            print("play clicked")
-        elif (pygame.sprite.collide_rect(self.howToButton, click)):
-            print("howto clicked")
+        if pygame.sprite.collide_rect(self.playButton, click):
+            self.soundHit.play()
+        elif pygame.sprite.collide_rect(self.howToButton, click):
+            self.soundHit.play()
+            self.instructions = True
+            self.inMenu = False
 
     def songLoopUpdate(self):
         BLACK = (0, 0, 0)
