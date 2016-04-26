@@ -2,7 +2,7 @@ import pygame
 import os
 import random
 
-from sprites import Beat, MousePointer, Text
+from sprites import Beat, MousePointer, Text, Button
 from audio import Song, Sound
 from collections import deque
 
@@ -56,6 +56,22 @@ class PygameGame(object):
         path = os.path.normpath(path)
         self.menu = pygame.image.load(path)
         self.menu.convert()
+        self.buttons = pygame.sprite.Group()
+        self.initButtons()
+
+    def initButtons(self):
+        #All buttons were drawn by Edric Kusuma.
+        (playX, playY) = (850, 150)
+        (playW, playH) = (500, 200)
+        playPath = "Pictures/Buttons/Play.png"
+        self.playButton = Button(playPath, playX, playY, playW, playH)
+        (howToX, howToY) = (850, 400)
+        (howToW, howToH) = (500, 150)
+        howToPath = "Pictures/Buttons/HowTo.png"
+        self.howToButton = Button(howToPath, howToX, howToY, howToW, howToH)
+
+        self.playButton.add(self.buttons)
+        self.howToButton.add(self.buttons)
 
     def initBeats(self):
         self.r = 50
@@ -121,7 +137,7 @@ class PygameGame(object):
                 self.songLoop(clock)
 
             while self.inMenu:
-                self.menuLoop()
+                self.menuLoop(clock)
             
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -157,21 +173,28 @@ class PygameGame(object):
 
         self.songLoopUpdate()
 
-    def menuLoop(self):
+    def menuLoop(self, clock):
+        clock.tick(self.fps)
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.inGame = False
                 self.inMenu = False
             elif ((event.type == pygame.MOUSEBUTTONDOWN) and 
                     (event.button == 1)):
-                self.buttonPressed()
+                self.menuPressed()
 
         self.screen.blit(self.menu, (0, 0))
+        self.buttons.draw(self.screen)
         pygame.display.flip()
 
-    def buttonPressed(self):
+    def menuPressed(self):
         (x, y) = pygame.mouse.get_pos()
         click = MousePointer(x, y)
+        if (pygame.sprite.collide_rect(self.playButton, click)):
+            print("play clicked")
+        elif (pygame.sprite.collide_rect(self.howToButton, click)):
+            print("howto clicked")
 
     def songLoopUpdate(self):
         BLACK = (0, 0, 0)

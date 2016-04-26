@@ -80,7 +80,7 @@ class MousePointer(pygame.sprite.Sprite):
 class Text(pygame.sprite.Sprite):
     WHITE = (255, 255, 255)
     def __init__(self, surface, text, size, x, y, anchor="nw", 
-                                                color=Text.WHITE):
+                                                color=WHITE):
         super(Text, self).__init__()
         (self.x, self.y) = (x, y)
         self.text = text
@@ -122,21 +122,19 @@ class Text(pygame.sprite.Sprite):
         text = self.font.render(self.text, 1, self.color)
         self.image.blit(text, (0, 0))
 
-    def update(self, tick):
+    def update(self, tick=0):
         self.clock += tick
         self.draw()
         self.target.blit(self.image, (self.rectX, self.rectY))
 
+#Button uses an image for the visuals.
 class Button(pygame.sprite.Sprite):
-    def __init__(self, text, x, y, width, height):
+    BLUE = (0, 102, 255)
+    WHITE = (0, 0, 0)
+    def __init__(self, path, x, y, width, height):
         super(Button, self).__init__()
         (self.x, self.y) = (x, y)
         (self.width, self.height) = (width, height)
-        self.fontSize = 30
+        self.image = pygame.image.load(os.path.normpath(path))
+        self.image = self.image.convert_alpha()
         self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
-        self.image = pygame.Surface((self.width, self.height))
-        self.text = Text(self.image, text, self.fontSize, self.x, self.y)
-
-    def update(self):
-        self.draw()
-        self.text.update()
