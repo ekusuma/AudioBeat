@@ -9,7 +9,7 @@ class Beat(pygame.sprite.Sprite):
     WHITE = (255, 255, 255)
     def __init__(self, x, y, color, ordinal):
         super(Beat, self).__init__()
-        #Due to timing imprecisions with pygame, a global offset on beats need
+        #Due to timing imprecisions with pygame, a global offset on beats needs
         #to be implemented, so self.clock is initialized to 0.1 seconds.
         self.clock = 0.1
         self.radius = 50
@@ -66,7 +66,7 @@ class Beat(pygame.sprite.Sprite):
 
     def getPos(self):
         return (self.x, self.y)
-
+    
 #Used for collision detection.
 class MousePointer(pygame.sprite.Sprite):
     def __init__(self, x, y):

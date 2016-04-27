@@ -52,6 +52,7 @@ class PygameGame(object):
         self.songSelect = False
         self.instructions = False
         self.playSong = False
+        self.paused = False
 
     def initMenu(self):
         #Menu picture from: https://goo.gl/bwppX2
@@ -61,6 +62,11 @@ class PygameGame(object):
         self.menu.convert()
         self.menuButtons = pygame.sprite.Group()
         self.initMenuButtons()
+
+        path = "Pictures/loading.png"
+        path = os.path.normpath(path)
+        self.loadScreen = pygame.image.load(path)
+        self.loadScreen.convert()
 
     def initMenuButtons(self):
         #All buttons and the logo were drawn by Edric Kusuma.
@@ -262,7 +268,6 @@ class PygameGame(object):
         self.menuButtons.draw(self.screen)
         pygame.display.flip()
 
-
     def instructionLoop(self, clock):
         clock.tick(self.fps)
 
@@ -331,6 +336,10 @@ class PygameGame(object):
     def songSelectLoop(self, clock):
         clock.tick(self.fps)
 
+        self.screen.blit(self.menu, (0, 0))
+        self.songSelItems.draw(self.screen)
+        pygame.display.flip()
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.inGame = False
@@ -344,35 +353,41 @@ class PygameGame(object):
                     (event.button == 1)):
                 self.mousePressed()
 
-        self.screen.blit(self.menu, (0, 0))
-        self.songSelItems.draw(self.screen)
-        pygame.display.flip()
-
     def songLoop(self, clock):
         #tick_busy_loop is more expensive (more accurate too) than just
         #clock.tick, but this is necessary in a rhythm game.
         tick = clock.tick_busy_loop(self.fps) / 1000 #Convert to seconds
-        self.timeElapsed += tick
-        self.gameTimerFired(self.timeElapsed, tick)
+        if not self.paused:
+            pygame.mixer.music.unpause()
+            self.timeElapsed += tick
+            self.gameTimerFired(self.timeElapsed, tick)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.inGame = False
                 self.playSong = False
-            elif event.type == pygame.MOUSEBUTTONDOWN:
-                self.beatPressed()
             elif event.type == pygame.KEYDOWN:
-                if (event.key == pygame.K_z or event.key == pygame.K_x):
+                if (event.key == pygame.K_ESCAPE):
+                    self.paused = not self.paused
+                if not self.paused:
+                    if (event.key == pygame.K_z or event.key == pygame.K_x):
+                        self.beatPressed()
+            if not self.paused:
+                if event.type == pygame.MOUSEBUTTONDOWN:
                     self.beatPressed()
-            elif event.type == self.PLAYBACK_END:
-                pygame.mixer.music.stop()
-                self.ending = True
+                elif event.type == self.PLAYBACK_END:
+                    pygame.mixer.music.stop()
+                    self.ending = True
+
+        if self.paused:
+            pygame.mixer.music.pause()
 
         if self.ending:
             self.countdown -= tick
             if self.countdown <= 0:
                 self.ending = False
                 self.playSong = False
+                self.songSelect = True
 
         self.songLoopUpdate()
 
@@ -385,6 +400,9 @@ class PygameGame(object):
         pygame.display.flip()
 
     def play(self):
+        self.screen.blit(self.loadScreen, (0, 0))
+        pygame.display.flip()
+
         pygame.mixer.music.stop()
         self.initSong(self.songPath)
         self.songSelect = False
