@@ -427,7 +427,7 @@ class PygameGame(object):
             else:
                 self.soundHit.play()
                 self.combo += 1
-            beat.kill()
+            beat.dying()
             self.beatQueue.popleft()
             self.addHit(beat)
 
@@ -466,14 +466,14 @@ class PygameGame(object):
 
         for beat in self.beats:
             beat.update(tick)
-            if beat.clock >= self.beatKill:
-                beat.kill()
+            if ((beat.killClock == None) and (beat.clock >= self.beatKill)):
+                beat.dying()
                 self.beatQueue.remove(beat)
                 self.mistake(beat)
         for hit in self.hits:
             hit.update(tick)
-            if hit.clock >= self.hitKill:
-                hit.kill()
+            if ((hit.killClock == None) and (hit.clock >= self.hitKill)):
+                hit.dying()
 
     def addBeat(self):
         (offsetW, offsetH) = (self.width-self.r, self.height-self.r)
