@@ -12,12 +12,8 @@ class Song(object):
 
     def analyze(self):
         audio_path = self.path
-        print("Loading song for analysis...", end = "")
         y, sr = librosa.load(audio_path, sr=None)
-        print("done!")
-        print("Analyzing song tempo and beats...", end = "")
         tempo, beats = librosa.beat.beat_track(y=y, sr=sr)
-        print("done!")
         self.tempo = tempo
         self.beats = list(beats)
         self.times = list(librosa.frames_to_time(beats, sr=sr))
