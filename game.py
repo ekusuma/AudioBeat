@@ -68,6 +68,11 @@ class PygameGame(object):
         self.loadScreen = pygame.image.load(path)
         self.loadScreen.convert()
 
+        path = "Pictures/paused.png"
+        path = os.path.normpath(path)
+        self.pauseScreen = pygame.image.load(path)
+        self.pauseScreen.convert()
+
     def initMenuButtons(self):
         #All buttons and the logo were drawn by Edric Kusuma.
         (logoX, logoY) = (50, 275)
@@ -210,6 +215,13 @@ class PygameGame(object):
         self.feelgoodBox = Button(goodPath, x, y5, width, height)
         self.feelgoodBox.add(self.songSelItems)
 
+        self.backSmallGrp = pygame.sprite.GroupSingle()
+        (width, height) = (175, 175)
+        (x, y) = (50, self.height - 50 - height)
+        path = "Pictures/Buttons/BackSmall.png"
+        self.backSmall = Button(path, x, y, width, height)
+        self.backSmall.add(self.backSmallGrp)
+
     def run(self):
         clock = pygame.time.Clock()
         self.screen = pygame.display.set_mode((self.width, self.height))
@@ -329,6 +341,11 @@ class PygameGame(object):
         elif pygame.sprite.collide_rect(self.feelgoodBox, click):
             self.songPath = "Songs/Feel Good Inc.ogg"
 
+        if pygame.sprite.collide_rect(self.backSmall, click):
+            self.soundMiss.play()
+            self.songSelect = False
+            self.inMenu = True
+
         if pygame.sprite.spritecollideany(click, self.songSelItems):
             self.soundHit.play()
             self.play()
@@ -337,6 +354,7 @@ class PygameGame(object):
         clock.tick(self.fps)
 
         self.screen.blit(self.menu, (0, 0))
+        self.backSmallGrp.draw(self.screen)
         self.songSelItems.draw(self.screen)
         pygame.display.flip()
 
@@ -367,9 +385,16 @@ class PygameGame(object):
                 self.inGame = False
                 self.playSong = False
             elif event.type == pygame.KEYDOWN:
-                if (event.key == pygame.K_ESCAPE):
+                if event.key == pygame.K_ESCAPE:
                     self.paused = not self.paused
-                if not self.paused:
+                if self.paused:
+                    if event.key == pygame.K_r:
+                        self.reset()
+                        self.songSelect = True
+                        self.playSong = False
+                        self.paused = False
+                        return
+                elif not self.paused:
                     if (event.key == pygame.K_z or event.key == pygame.K_x):
                         self.beatPressed()
             if not self.paused:
@@ -392,11 +417,15 @@ class PygameGame(object):
         self.songLoopUpdate()
 
     def songLoopUpdate(self):
-        BLACK = (0, 0, 0)
-        self.screen.fill(BLACK)
-        self.hits.draw(self.screen)
-        self.beats.draw(self.screen)
-        self.printText()
+        if not self.paused:
+            BLACK = (0, 0, 0)
+            self.screen.fill(BLACK)
+            self.hits.draw(self.screen)
+            self.beats.draw(self.screen)
+            self.printText()
+        if self.paused:
+            self.screen.blit(self.pauseScreen, (0,0))
+
         pygame.display.flip()
 
     def play(self):
@@ -407,6 +436,20 @@ class PygameGame(object):
         self.initSong(self.songPath)
         self.songSelect = False
         self.playSong = True
+
+    def reset(self):
+        pygame.mixer.music.stop()
+        self.combo = 0
+        self.score = 0
+        self.prevAddition = 0
+        self.lastBeatHit = (0, 0)
+        self.hits = pygame.sprite.Group()
+        self.timeElapsed = 0 + self.audioDelay
+        self.beats = pygame.sprite.Group()
+        self.beatQueue = deque()
+        self.beatNum = 1
+        pygame.mixer.music.set_endevent()
+
 
 
 ###############################################################################
