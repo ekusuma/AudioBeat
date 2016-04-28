@@ -16,7 +16,7 @@ class Beat(pygame.sprite.Sprite):
         self.rOuter = self.radius * 5
         self.rRing = self.rOuter
         self.ringWidth = 3
-        self.dRadius = self.rOuter // 60
+        self.dRadius = (self.rOuter // 60) - (self.radius // 60)
         self.outline = 4
         self.x = x
         self.y = y
@@ -94,8 +94,9 @@ class MousePointer(pygame.sprite.Sprite):
 
 class Text(pygame.sprite.Sprite):
     WHITE = (255, 255, 255)
+    FONT = os.path.normpath("Fonts/Nunito-Regular.ttf")
     def __init__(self, surface, text, size, x, y, anchor="nw", 
-                                                color=WHITE):
+                                                color=WHITE, fontType=FONT):
         super(Text, self).__init__()
         (self.x, self.y) = (x, y)
         self.text = text
@@ -104,7 +105,6 @@ class Text(pygame.sprite.Sprite):
         self.clock = 0
 
         #Font downloaded from http://google.com/fonts
-        fontType = os.path.normpath("Fonts/Nunito-Regular.ttf")
         self.font = pygame.font.Font(fontType, size)
 
         (self.width, self.height) = self.font.size(self.text)
@@ -155,6 +155,20 @@ class Text(pygame.sprite.Sprite):
 
     def dying(self):
         self.killClock = self.killTime
+
+#Stable text, or text that doesn't need to fade out.
+class StText(Text):
+    WHITE = (255, 255, 255, 0)
+    BG = (77, 119, 182, 0)
+    FONT = os.path.normpath("Fonts/Rubik-Italic.ttf")
+    def __init__(self, surface, text, size, x, y, anchor="nw", 
+                                                color=WHITE, fontType=FONT):
+        super().__init__(surface, text, size, x, y, anchor, color, fontType)
+
+    def draw(self):
+        super().draw()
+        text = self.font.render(self.text, 1, self.color, StText.BG)
+        self.image.blit(text, (0, 0))
 
 #Button uses an image for the visuals.
 class Button(pygame.sprite.Sprite):
