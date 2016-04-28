@@ -1,5 +1,6 @@
-# 15-112-Term-Project
-AudioBeat - A procedurally generated rhythm game for the 15-112 final Term Project.
+# AudioBeat
+### 15-112-Term-Project
+**AudioBeat** - A procedurally generated rhythm game for the 15-112 final Term Project.
 
 This game takes any song the user puts in (via the file's path), as well as a few pre-loaded songs, performs beat analysis, then generates a rhythm game to that song. The placement of the buttons, called "Beats" are randomized, so will be different every time the user starts up a song.
 
@@ -9,6 +10,7 @@ The instructions on how to play the game are included in the game itself. To sta
 
 **Note:** AudioBeat was made solely with Windows functionality in mind. As such, *there is no support for other OS's*, and the instructions posted here will most likely only work for Windows computers.
 
+### Modules
 AudioBeat was programmed using Python 3.4, with the following modules:
 
 1. Pygame
