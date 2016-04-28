@@ -2,6 +2,9 @@ import pygame
 import os
 import random
 import time
+#Eztext creates text input for pygame. 
+#Adapted from: http://pygame.org/project-EzText-920-.html
+import eztext
 
 from sprites import Beat, MousePointer, Text, StText, Button
 from audio import Song, Sound
@@ -25,6 +28,8 @@ class PygameGame(object):
         self.title = title
         iconPath = os.path.normpath("Pictures/icon.png")
         self.icon = pygame.image.load(iconPath)
+        self.BGColor = (77, 119, 182)
+        self.menuColor = (217, 230, 255)
 
         self.initModes()
         self.initBeats()
@@ -208,6 +213,18 @@ class PygameGame(object):
         self.songSelItems = pygame.sprite.Group()
         spacing = 5 + 120
 
+        #Downloaded from http://google.com/fonts
+        self.menuFont = "Fonts/SourceCodePro-Regular.ttf"
+        font = pygame.font.Font(self.menuFont, 25)
+        self.usrSong = eztext.Input(color=self.menuColor, maxlength=50, x=70, 
+            y=150, font=font)
+
+        (x, y) = (50, 50)
+        (width, height) = (800, 175)
+        path = "Pictures/TextInput.png"
+        textInput = Button(path, x, y, width, height)
+        textInput.add(self.songSelItems)
+
         (x, y0) = (950, 50)
         (width, height) = (500, 120)
         applePath = "Pictures/Song Select/badAppleBox.png"
@@ -334,12 +351,16 @@ class PygameGame(object):
     def songSelectLoop(self, clock):
         clock.tick(self.fps)
 
+        events = pygame.event.get()
+
         self.screen.blit(self.menu, (0, 0))
         self.backSmallGrp.draw(self.screen)
         self.songSelItems.draw(self.screen)
+        self.usrSong.update(events)
+        self.usrSong.draw(self.screen)
         pygame.display.flip()
 
-        for event in pygame.event.get():
+        for event in events:
             if event.type == pygame.QUIT:
                 self.inGame = False
                 self.songSelect = False
