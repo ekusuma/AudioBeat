@@ -4,6 +4,7 @@ import random
 import time
 #Eztext creates text input for pygame. 
 #Adapted from: http://pygame.org/project-EzText-920-.html
+#Edits were made by myself, details in eztext.py
 import eztext
 
 from sprites import Beat, MousePointer, Text, StText, Button
@@ -12,6 +13,10 @@ from collections import deque
 
 #OOP Pygame framework adapted from:
 #http://blog.lukasperaza.com/getting-started-with-pygame/
+
+#All fonts downloaded from http://google.com/fonts
+
+#All buttons and the logo were drawn by Edric Kusuma.
 
 #Centers the window, a function that is built in to os module.
 #Solution from: http://goo.gl/PJVbeN
@@ -28,8 +33,6 @@ class PygameGame(object):
         self.title = title
         iconPath = os.path.normpath("Pictures/icon.png")
         self.icon = pygame.image.load(iconPath)
-        self.BGColor = (77, 119, 182)
-        self.menuColor = (217, 230, 255)
 
         self.initModes()
         self.initBeats()
@@ -43,6 +46,8 @@ class PygameGame(object):
         #Need to start time a second early because we add a beat a second early.
         self.audioDelay = -1.45
         self.timeElapsed = 0 + self.audioDelay
+        #We want the game to end a bit after the song playback ends, so we add
+        #a delayed end timer
         self.endDelay = 2.0
         self.countdown = None
 
@@ -71,8 +76,12 @@ class PygameGame(object):
         self.playSong = False
         self.scoreScreen = False
         self.paused = False
+        self.error = False
 
     def initMenu(self):
+        #Needed for copy/paste support.
+        pygame.scrap.init()
+
         #Menu picture from: https://goo.gl/bwppX2
         path = "Pictures/menu.png"
         path = os.path.normpath(path)
@@ -92,7 +101,6 @@ class PygameGame(object):
         self.pauseScreen.convert()
 
     def initMenuButtons(self):
-        #All buttons and the logo were drawn by Edric Kusuma.
         (logoX, logoY) = (50, 275)
         (logoW, logoH) = (700, 300)
         logoPath = "Pictures/Logo.png"
@@ -116,6 +124,7 @@ class PygameGame(object):
         #Menu music taken from: http://www.newgrounds.com/audio/listen/438759
         menuMusicPath = "SFX/menu.ogg"
         pygame.mixer.music.load(menuMusicPath)
+
         #Repeat menu music indefinitely.
         pygame.mixer.music.play(loops=-1)
 
@@ -132,6 +141,7 @@ class PygameGame(object):
         self.beatColor = (0, 0, 0)
         self.shuffleColor()
 
+        #Needed in order to properly randomize beat positions.
         self.prevX = None
         self.prevY = None
         self.maxDist = 200
@@ -153,6 +163,8 @@ class PygameGame(object):
         self.perfects = 0
 
     def initBeatTiming(self):
+        #Beats appear a second early (beatApproach), and the width between the
+        #different scores is dictated by windowWidth.
         self.beatApproach = 1.0
         self.windowWidth = 0.06
 
@@ -177,13 +189,14 @@ class PygameGame(object):
         endTime = time.time()
         
         loadTime = abs(endTime - startTime)
+        #Necessary offset, or else song and game go out of sync.
         self.timeElapsed -= loadTime
 
     def initSounds(self):
-        #hit sound from:
+        #Hit sound from:
         #https://www.freesound.org/people/radiopassiveboy/sounds/219266/
         self.soundHit = Sound("SFX/hit.ogg")
-        #mistake sound from:
+        #Mistake sound from:
         #https://www.freesound.org/people/zerolagtime/sounds/49238/
         self.soundMiss = Sound("SFX/miss.ogg")
         
@@ -211,22 +224,17 @@ class PygameGame(object):
 
     def initSongSelect(self):
         self.songSelItems = pygame.sprite.Group()
+        #Spacing between song select buttons.
         spacing = 5 + 120
 
-        #Downloaded from http://google.com/fonts
-        self.menuFont = "Fonts/SourceCodePro-Regular.ttf"
-        font = pygame.font.Font(self.menuFont, 25)
-        self.usrSong = eztext.Input(color=self.menuColor, maxlength=50, x=70, 
-            y=150, font=font)
+        self.initInput()
 
-        (x, y) = (50, 50)
-        (width, height) = (800, 175)
+        (x, y, width, height) = (50, 50, 800, 175)
         path = "Pictures/TextInput.png"
-        textInput = Button(path, x, y, width, height)
-        textInput.add(self.songSelItems)
+        self.textInput = Button(path, x, y, width, height)
+        self.textInput.add(self.songSelItems)
 
-        (x, y0) = (950, 50)
-        (width, height) = (500, 120)
+        (x, y0, width, height) = (950, 50, 500, 120)
         applePath = "Pictures/Song Select/badAppleBox.png"
         self.badAppleBox = Button(applePath, x, y0, width, height)
         self.badAppleBox.add(self.songSelItems)
@@ -241,6 +249,7 @@ class PygameGame(object):
         self.dummyBox = Button(dummyPath, x, y2, width, height)
         self.dummyBox.add(self.songSelItems)
 
+        #I hate you, arbitrary 20-line limit.
         self.initSongSelect2(x, width, height, y2, spacing)
 
     def initSongSelect2(self, x, width, height, y2, spacing):
@@ -266,6 +275,32 @@ class PygameGame(object):
         self.backSmall = Button(path, x, y, width, height)
         self.backSmall.add(self.backSmallGrp)
 
+        self.initError()
+        self.initTextClear()
+
+    def initInput(self):
+        menuFont = "Fonts/SourceCodePro-Regular.ttf"
+        font = pygame.font.Font(menuFont, 25)
+        textColor = (217, 230, 255)
+        self.usrSong = eztext.Input(color=textColor, maxlength=50, x=70, 
+            y=150, font=font)
+
+    def initError(self):
+        self.oops = pygame.sprite.GroupSingle()
+        (x, y) = (50, 250)
+        (width, height) = (800, 350)
+        path = "Pictures/Error.png"
+        self.errorMessage = Button(path, x, y, width, height)
+        self.errorMessage.add(self.oops)
+
+    def initTextClear(self):
+        self.clearTextGrp = pygame.sprite.GroupSingle()
+        (x, y) = (860, 50)
+        (width, height) = (40, 175)
+        path = "Pictures/Buttons/Clear.png"
+        self.clearText = Button(path, x, y, width, height)
+        self.clearText.add(self.clearTextGrp)
+
     def run(self):
         clock = pygame.time.Clock()
         self.screen = pygame.display.set_mode((self.width, self.height))
@@ -286,7 +321,7 @@ class PygameGame(object):
 ###############################################################################
     def mainLoop(self, clock):
         if not pygame.mixer.music.get_busy():
-                self.initMenuMusic()
+            self.initMenuMusic()
 
         while self.inMenu:
             self.menuLoop(clock)
@@ -353,11 +388,11 @@ class PygameGame(object):
 
         events = pygame.event.get()
 
-        self.screen.blit(self.menu, (0, 0))
-        self.backSmallGrp.draw(self.screen)
-        self.songSelItems.draw(self.screen)
-        self.usrSong.update(events)
-        self.usrSong.draw(self.screen)
+        self.songSelUpdate(events)
+
+        if self.error:
+            self.oops.draw(self.screen)
+
         pygame.display.flip()
 
         for event in events:
@@ -425,6 +460,14 @@ class PygameGame(object):
         BLACK = (0, 0, 0)
         self.screen.fill(BLACK)
         pygame.display.flip()
+
+    def songSelUpdate(self, events):
+        self.screen.blit(self.menu, (0, 0))
+        self.backSmallGrp.draw(self.screen)
+        self.songSelItems.draw(self.screen)
+        self.clearTextGrp.draw(self.screen)
+        self.usrSong.update(events)
+        self.usrSong.draw(self.screen)
 
     def songLoopUpdate(self):
         if not self.paused:
@@ -497,6 +540,22 @@ class PygameGame(object):
             self.inMenu = True
 
     def checkSongSelCollision(self, click):
+        self.checkSelectedSong(click)
+
+        if pygame.sprite.collide_rect(self.clearText, click):
+            self.soundMiss.play()
+            self.usrSong.clear()
+
+        if pygame.sprite.collide_rect(self.backSmall, click):
+            self.soundMiss.play()
+            self.songSelect = False
+            self.inMenu = True
+
+        if pygame.sprite.spritecollideany(click, self.songSelItems):
+            self.soundHit.play()
+            self.play()
+
+    def checkSelectedSong(self, click):
         if pygame.sprite.collide_rect(self.badAppleBox, click):
             self.songPath = "Songs/Bad Apple.mp3"
         elif pygame.sprite.collide_rect(self.bonetrousleBox, click):
@@ -509,15 +568,8 @@ class PygameGame(object):
             self.songPath = "Songs/Rhinestone Eyes.ogg"
         elif pygame.sprite.collide_rect(self.feelgoodBox, click):
             self.songPath = "Songs/Feel Good Inc.ogg"
-
-        if pygame.sprite.collide_rect(self.backSmall, click):
-            self.soundMiss.play()
-            self.songSelect = False
-            self.inMenu = True
-
-        if pygame.sprite.spritecollideany(click, self.songSelItems):
-            self.soundHit.play()
-            self.play()
+        elif pygame.sprite.collide_rect(self.textInput, click):
+            self.songPath = self.usrSong.value.replace('"', "")
 
     def checkScoreCollision(self, click):
         if pygame.sprite.collide_rect(self.backScore, click):
@@ -582,13 +634,22 @@ class PygameGame(object):
         self.screen.blit(self.loadScreen, (0, 0))
         pygame.display.flip()
 
+        #If custom path doesn't work (crashes), then we go back to song select.
+        try:
+            self.initSong(self.songPath)
+        except:
+            self.error = True
+            return
+
         pygame.mixer.music.stop()
-        self.initSong(self.songPath)
         self.songSelect = False
         self.playSong = True
 
+    #Resets variables to prepare for next song.
     def reset(self):
         pygame.mixer.music.stop()
+
+        self.error = False
 
         self.countdown = None
         self.playSong = False
@@ -608,7 +669,6 @@ class PygameGame(object):
 
         pygame.mixer.music.set_endevent()
 
-
 ###############################################################################
 ########################### Game code starts here #############################
 ###############################################################################
@@ -617,6 +677,8 @@ class PygameGame(object):
             return
         (x, y) = pygame.mouse.get_pos()
         click = MousePointer(x, y)
+
+        #Only the oldest beat placed can be clicked on.
         beat = self.beatQueue[0]
         if (pygame.sprite.collide_circle(beat, click)):
             mistake = self.addScore(beat.clock, beat)
@@ -655,6 +717,7 @@ class PygameGame(object):
 
         return False
 
+    #Increments counter for each hit type.
     def scoreTrack(self, addition):
         mult = self.getComboMult()
         self.score = int(self.score + (addition * mult))
@@ -667,10 +730,11 @@ class PygameGame(object):
         elif (addition == self.scorePerfect):
             self.perfects += 1
 
-    #Based off how osu! calculates this, taken from: https://osu.ppy.sh/wiki/Score
+    #Based off how osu! calculates this, from: https://osu.ppy.sh/wiki/Score
     def getComboMult(self):
         return (1 + self.combo/25)
 
+    #Checks internal clocks of each beat.
     def gameTimerFired(self, time, tick):
         if (time + self.beatApproach) >= self.nextBeat:
             if len(self.times) > 0:
@@ -689,10 +753,14 @@ class PygameGame(object):
                 hit.dying()
 
     def addBeat(self):
+        #Can't let beat go off-screen.
         (offsetW, offsetH) = (self.width-self.r, self.height-self.r)
         if (self.prevX == None) and (self.prevY == None):
             x = random.randint(0+self.r, offsetW)
             y = random.randint(0+self.r, offsetH)
+        #Biasing in effect here. If beat position is in the edge 1/4 of the
+        #screen, it will push the next beat to the center of the screen. If
+        #it's in the center already, it's completely random.
         else:
             if (self.prevX < self.width // 4): xMult = 1
             elif (self.prevX > 3*(self.width // 4)): xMult = -1
@@ -712,6 +780,7 @@ class PygameGame(object):
         self.beatQueue.append(beat)
         self.updateOrdinal()
 
+    #Updates number drawn on the beat.
     def updateOrdinal(self):
         self.beatNum += 1
         if self.beatNum > self.beatNumMax:
@@ -720,6 +789,8 @@ class PygameGame(object):
 
     def mistake(self, beat):
         if (self.combo > self.maxCombo): self.maxCombo = self.combo
+        #Only play noise when the player has a decent-sized combo.
+        #Otherwise it's annoying as hell.
         if (self.combo >= 10):
             self.soundMiss.play()
 
@@ -734,12 +805,14 @@ class PygameGame(object):
 
         self.misses += 1
 
+    #Change color of beats.
     def shuffleColor(self):
         newColor = random.choice(self.colorChoices)
         while (newColor == self.beatColor):
             newColor = random.choice(self.colorChoices)
         self.beatColor = newColor
 
+    #Prints combo and score on screen.
     def printText(self):
         (width, height) = self.screen.get_size()
         textScore = str(self.score)
@@ -770,7 +843,7 @@ class PygameGame(object):
         hitText = Text(self.screen, text, size, x, y, "center", color)
         hitText.add(self.hits)
 
-
+#Randomized taglines for additional fun!
 taglines = ["Tap to the Beat!", "Just Beat it!", "Tap or die!",
             "Play your own songs!", "WUBWUBWUBWUBWUBWUB",
             "Randomized taglines!", "Algo-rhythmic!"]

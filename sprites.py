@@ -47,12 +47,10 @@ class Beat(pygame.sprite.Sprite):
         self.image.fill((255,255,255,0))
         pygame.draw.circle(self.image, Beat.WHITE, (self.rOuter, self.rOuter),
             self.rRing, self.ringWidth)
-        radius = 2 * self.radius
-        outline = 2 * self.outline
+        (radius, outline) = (2 * self.radius, 2 * self.outline)
         surface = pygame.Surface((2 * radius, 2 * radius),
                                     pygame.SRCALPHA|pygame.HWSURFACE)
-        pygame.draw.circle(surface, Beat.WHITE, (radius, radius),
-                        radius)
+        pygame.draw.circle(surface, Beat.WHITE, (radius, radius), radius)
         pygame.draw.circle(surface, self.color, (radius, radius),
                         radius-outline)
         (width, height) = (2 * self.radius, 2 * self.radius)
@@ -62,11 +60,11 @@ class Beat(pygame.sprite.Sprite):
         self.drawText()
 
         if self.killClock != None:
-            alpha = int((self.killClock/self.killTime) * 255)
+            alpha = max(int((self.killClock/self.killTime) * 255), 0)
             alpha = max(alpha, 0)
             rectToFill = (startPoint, startPoint, width, height)
             self.image.fill((255, 255, 255, alpha), rectToFill,
-                                    pygame.BLEND_RGBA_MIN)
+                                pygame.BLEND_RGBA_MIN)
 
     def drawText(self):
         font = pygame.font.Font(None, self.fontSize)

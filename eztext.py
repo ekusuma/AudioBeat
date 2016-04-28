@@ -1,3 +1,11 @@
+#Source: http://pygame.org/project-EzText-920-.html
+
+#I (Edric) have made the following edits:
+#   Added support for pasting user text
+#   Holding down backspace will continuously delete text
+#   If text exceeds max length, will truncate beginning of path to "..."
+#   Added clear() method, to delete user input
+
 # input lib
 from pygame.locals import *
 import pygame, string
@@ -30,6 +38,7 @@ class Input:
         self.prompt = self.options.prompt
         self.value = ''
         self.shifted = False
+        self.control = False
         self.pause = 0
         self.displayValue = ''
 
@@ -47,6 +56,9 @@ class Input:
         text = self.font.render(self.prompt+self.displayValue, 1, self.color)
         surface.blit(text, (self.x, self.y))
 
+    def clear(self):
+        self.value = ""
+
     def update(self, events):
         """ Update the input based on passed events """
         pressed = pygame.key.get_pressed()
@@ -60,11 +72,19 @@ class Input:
         for event in events:
             if event.type == KEYUP:
                 if event.key == K_LSHIFT or event.key == K_RSHIFT: self.shifted = False
+                elif event.key == K_LCTRL or event.key == K_RCTRL: self.control = False
             if event.type == KEYDOWN:
                 if event.key == K_BACKSPACE: self.value = self.value[:-1]
                 elif event.key == K_LSHIFT or event.key == K_RSHIFT: self.shifted = True
+                elif event.key == K_LCTRL or event.key == K_RCTRL: self.control = True
                 elif event.key == K_SPACE: self.value += ' '
-                if not self.shifted:
+                if self.control:
+                    if event.key == K_v: 
+                        addition = pygame.scrap.get(pygame.SCRAP_TEXT)
+                        if addition != None and len(addition) > 0:
+                            addition = addition[:-1].decode("utf-8", "ignore")
+                            self.value += addition
+                elif not self.shifted:
                     if event.key == K_a and 'a' in self.restricted: self.value += 'a'
                     elif event.key == K_b and 'b' in self.restricted: self.value += 'b'
                     elif event.key == K_c and 'c' in self.restricted: self.value += 'c'
