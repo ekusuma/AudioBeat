@@ -4,6 +4,8 @@
 
 This game takes any song the user puts in (via the file's path), as well as a few pre-loaded songs, performs beat analysis, then generates a rhythm game to that song. The placement of the buttons, called "Beats" are randomized, so will be different every time the user starts up a song.
 
+A demonstration video can be found [here](https://youtu.be/EWh84U0GZ4I)
+
 The rhythm game itself is heavily based on the game [osu!](http://osu.ppy.sh/), while the beat generation is inspired by [Audiosurf](http://www.audio-surf.com/).
 
 The instructions on how to play the game are included in the game itself. To start AudioBeat, open game.py and run it. Everything else will be taken from the other files in the game folder.
